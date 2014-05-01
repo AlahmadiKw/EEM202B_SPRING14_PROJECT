@@ -108,14 +108,14 @@ double computeSum1(double BETA, int NUM_TERMS, Entry *entry, double now) {
 }
 
 /************************/
-double computeSum1Online(double BETA, int NUM_TERMS, Entry *entry, double now) {
+double computeSum1Online(double BETA, int NUM_TERMS, Step *step, double now) {
     double sum, x;
     int m;
     x = 0;
     for (m = 1; m <= NUM_TERMS; m++) {
-        x = x + (1 - exp(-BETA*BETA*m*m*(now-entry->step->startTime)))/(BETA*BETA*m*m);
+        x = x + (1 - exp(-BETA*BETA*m*m*(now-step->startTime)))/(BETA*BETA*m*m);
     }
-    sum = entry->step->currentLoad*(now - entry->step->startTime + 2*x);
+    sum = step->currentLoad*(now - step->startTime + 2*x);
     return sum;
 }
 
@@ -141,16 +141,16 @@ double computeSum2(double BETA, int NUM_TERMS, Entry *head, Entry *last, double 
 }
 
 /************************/
-double computeSum2Online(double BETA, int NUM_TERMS, Entry *head, Entry *last, double now) {
+double computeSum2Online(double BETA, int NUM_TERMS, Step *steps[], int last, double now) {
     double sum, x;
     double current, duration, start;
     int m;
-    Entry *entry;
     sum = 0;
-    for (entry = last; entry != head; entry = entry->prev) {
-        current = entry->step->currentLoad;
-        duration = entry->step->loadDuration;
-        start = entry->step->startTime;
+    int i = 0;
+    for (i=last; i>=0; i--){
+        current = step[i]->currentLoad;
+        duration = step[i]->loadDuration;
+        start = step[i]->startTime;
         x = 0;
         for (m = 1; m <= NUM_TERMS; m++) {
             x = x + (exp(-BETA*BETA*m*m*(now-start-duration)) - exp(-BETA*BETA*m*m*(now-start)))/(BETA*BETA*m*m);

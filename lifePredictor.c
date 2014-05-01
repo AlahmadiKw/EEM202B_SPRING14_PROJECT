@@ -225,21 +225,21 @@ int main (int argc, char* argv[]) {
         start = entry->step->startTime;
 
         X = computeSum1(BETA, NUM_TERMS, entry, start+duration) + sum;
-        if (X > ALPHA) {
-            now = start;
-            while (now < start + duration) {
-                Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
-                if (Y > ALPHA) {
-                    L = now;
-                    break;
-                }
-                now = now + DELTA;
+        // if (X > ALPHA) {
+        now = start;
+        while (now < start + duration) {
+            Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
+            if (Y > ALPHA) {
+                L = now;
+                break;
             }
-            if (L > 0) break;
+            now = now + DELTA;
         }
+        if (L > 0) break;
+        // }
+        printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);
         sum = computeSum2(BETA, NUM_TERMS, head, entry, start+duration);
-        charge = charge + current*duration;
+        charge = charge + current*duration;   
     }
 
     if (L == -1) {	/* the last load have not been checked yet */
@@ -254,13 +254,13 @@ int main (int argc, char* argv[]) {
             now = entry->step->startTime;
             while (now < T) {
                 Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
                 if (Y > ALPHA) {
                     L = now;
                     break;
                 }
                 now = now + DELTA;
             }
+            printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
         }    
     }
 
