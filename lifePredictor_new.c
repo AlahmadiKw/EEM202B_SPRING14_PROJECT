@@ -222,7 +222,6 @@ int main (int argc, char* argv[]) {
     head->next = NULL;
 
     for (k = 0; ; k++) {
-        load_nums = k;
         if (fscanf(currentProfile, "%lf %lf\n", &start, &current) == EOF) break;
 
         step = createStep(k, current, 0, start);
@@ -238,24 +237,28 @@ int main (int argc, char* argv[]) {
         }  
 
 
-        steps[k] = step; 
         addEntry (head, entry);
     }
 
+/*** Compute step durations ***/
+
+    head->prev->step->loadDuration = 0;	/* dummy last step (no load) */
+    for (entry = head->next; entry != head->prev; entry = entry->next) {
+        entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
+    }
+    i = 0;
+    for (entry = head->next; entry != head; entry = entry->next) {
+        printf("%d\n",i );
+        steps[i++] = entry->step; 
+    }
+    load_nums = i;
 
     for (i=0; i<load_nums; i++){
         printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i]->stepIndex, 
                                                 "currentLoad", steps[i]->currentLoad,
-                                                "loadDuration", steps[i]->loadDuration,                                                "startTime", steps[i]->startTime);
+                                                "loadDuration", steps[i]->loadDuration,      
+                                                "startTime", steps[i]->startTime);
     }
-
-
-// /*** Compute step durations ***/
-
-//     head->prev->step->loadDuration = 0;	/* dummy last step (no load) */
-//     for (entry = head->next; entry != head->prev; entry = entry->next) {
-//         entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
-//     }
 
 
 // /*** Compute life ***/
