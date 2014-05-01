@@ -39,7 +39,7 @@ on a Pocket Computer", IEEE Trans. VLSI, vol.11, no.6, 2003.
 #include <stdio.h>
 #include <math.h>
 
-#include "lifePredictor.h"
+#include "lifePredictor_new.h"
 
 
 /************************/
@@ -107,9 +107,41 @@ double computeSum1(double BETA, int NUM_TERMS, Entry *entry, double now) {
     return sum;
 }
 
+/************************/
+double computeSum1Online(double BETA, int NUM_TERMS, Entry *entry, double now) {
+    double sum, x;
+    int m;
+    x = 0;
+    for (m = 1; m <= NUM_TERMS; m++) {
+        x = x + (1 - exp(-BETA*BETA*m*m*(now-entry->step->startTime)))/(BETA*BETA*m*m);
+    }
+    sum = entry->step->currentLoad*(now - entry->step->startTime + 2*x);
+    return sum;
+}
+
 
 /************************/
 double computeSum2(double BETA, int NUM_TERMS, Entry *head, Entry *last, double now) {
+    double sum, x;
+    double current, duration, start;
+    int m;
+    Entry *entry;
+    sum = 0;
+    for (entry = last; entry != head; entry = entry->prev) {
+        current = entry->step->currentLoad;
+        duration = entry->step->loadDuration;
+        start = entry->step->startTime;
+        x = 0;
+        for (m = 1; m <= NUM_TERMS; m++) {
+            x = x + (exp(-BETA*BETA*m*m*(now-start-duration)) - exp(-BETA*BETA*m*m*(now-start)))/(BETA*BETA*m*m);
+        }
+        sum = sum + current*(duration + 2*x);
+    }
+    return sum;
+}
+
+/************************/
+double computeSum2Online(double BETA, int NUM_TERMS, Entry *head, Entry *last, double now) {
     double sum, x;
     double current, duration, start;
     int m;
@@ -140,13 +172,16 @@ int main (int argc, char* argv[]) {
     FILE* configData;
     FILE* currentProfile;
 
-    int k;
+    int k,i;
     double sum, now, charge;
     double T, L, X, Y;
     double current, duration, start;
 
     Step *step;
     Entry *head, *entry;
+
+    int load_nums = 0;
+    Step *steps[ARR_SIZE];
 
 
 /*** Open files containing battery profile and current profile ***/
@@ -187,6 +222,7 @@ int main (int argc, char* argv[]) {
     head->next = NULL;
 
     for (k = 0; ; k++) {
+        load_nums = k;
         if (fscanf(currentProfile, "%lf %lf\n", &start, &current) == EOF) break;
 
         step = createStep(k, current, 0, start);
@@ -201,91 +237,100 @@ int main (int argc, char* argv[]) {
             return EXIT_FAILURE;  
         }  
 
+
+        steps[k] = step; 
         addEntry (head, entry);
     }
 
 
-/*** Compute step durations ***/
-
-    head->prev->step->loadDuration = 0;	/* dummy last step (no load) */
-    for (entry = head->next; entry != head->prev; entry = entry->next) {
-        entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
+    for (i=0; i<load_nums; i++){
+        printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i]->stepIndex, 
+                                                "currentLoad", steps[i]->currentLoad,
+                                                "loadDuration", steps[i]->loadDuration,                                                "startTime", steps[i]->startTime);
     }
 
 
-/*** Compute life ***/
+// /*** Compute step durations ***/
 
-    L = -1;
-    sum = 0;
-    charge = 0;
-    for (entry = head->next; entry != head->prev->prev; entry = entry->next) {
-
-        current = entry->step->currentLoad;
-        duration = entry->step->loadDuration;
-        start = entry->step->startTime;
-
-        X = computeSum1(BETA, NUM_TERMS, entry, start+duration) + sum;
-        if (X > ALPHA) {
-            now = start;
-            while (now < start + duration) {
-                Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\n\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
-                if (Y > ALPHA) {
-                    L = now;
-                    break;
-                }
-                now = now + DELTA;
-            }
-            if (L > 0) break;
-        }
-        sum = computeSum2(BETA, NUM_TERMS, head, entry, start+duration);
-        charge = charge + current*duration;
-    }
-
-    if (L == -1) {	/* the last load have not been checked yet */
-        entry = head->prev->prev;
-        T = (ALPHA - charge)/entry->step->currentLoad; /* charge already computed */
-        if (T < entry->step->loadDuration)
-            T = entry->step->startTime + T;
-        else T = entry->step->startTime + entry->step->loadDuration;
-
-        X = computeSum1(BETA, NUM_TERMS, entry, T) + sum; /* sum already computed */
-        if (X > ALPHA) {
-            now = entry->step->startTime;
-            while (now < T) {
-                Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\n\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
-                if (Y > ALPHA) {
-                    L = now;
-                    break;
-                }
-                now = now + DELTA;
-            }
-        }    
-    }
-
-printf ("\n\nPredicted Life = %f\n\n", L);
+//     head->prev->step->loadDuration = 0;	/* dummy last step (no load) */
+//     for (entry = head->next; entry != head->prev; entry = entry->next) {
+//         entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
+//     }
 
 
-/*** Free memory ***/
+// /*** Compute life ***/
 
-entry = head->next;  
-while (entry != head) {
-    entry = entry->next;
-    removeEntry(entry->prev);
-}
-free(head);
+//     L = -1;
+//     sum = 0;
+//     charge = 0;
+//     for (entry = head->next; entry != head->prev->prev; entry = entry->next) {
 
-if (fclose(configData) == EOF) {
-    printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
-    return EXIT_FAILURE;
-}  
+//         current = entry->step->currentLoad;
+//         duration = entry->step->loadDuration;
+//         start = entry->step->startTime;
 
-if (fclose(currentProfile) == EOF) {
-    printf("\n\n*** ERROR: fail closing current profile file...\n\n");
-    return EXIT_FAILURE;
-}  
+//         X = computeSum1(BETA, NUM_TERMS, entry, start+duration) + sum;
+//         if (X > ALPHA) {
+//             now = start;
+//             while (now < start + duration) {
+//                 Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
+//                 printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
+//                 if (Y > ALPHA) {
+//                     L = now;
+//                     break;
+//                 }
+//                 now = now + DELTA;
+//             }
+//             if (L > 0) break;
+//         }
+//         sum = computeSum2(BETA, NUM_TERMS, head, entry, start+duration);
+//         charge = charge + current*duration;
+//     }
 
-return EXIT_SUCCESS;
+//     if (L == -1) {	 the last load have not been checked yet 
+//         entry = head->prev->prev;
+//         T = (ALPHA - charge)/entry->step->currentLoad; /* charge already computed */
+//         if (T < entry->step->loadDuration)
+//             T = entry->step->startTime + T;
+//         else T = entry->step->startTime + entry->step->loadDuration;
+
+//         X = computeSum1(BETA, NUM_TERMS, entry, T) + sum; /* sum already computed */
+//         if (X > ALPHA) {
+//             now = entry->step->startTime;
+//             while (now < T) {
+//                 Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
+//                 printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
+//                 if (Y > ALPHA) {
+//                     L = now;
+//                     break;
+//                 }
+//                 now = now + DELTA;
+//             }
+//         }    
+//     }
+
+// printf ("\n\nPredicted Life = %f\n\n", L);
+
+
+// /*** Free memory ***/
+
+// entry = head->next;  
+// while (entry != head) {
+//     entry = entry->next;
+//     removeEntry(entry->prev);
+// }
+// free(head);
+
+// if (fclose(configData) == EOF) {
+//     printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
+//     return EXIT_FAILURE;
+// }  
+
+// if (fclose(currentProfile) == EOF) {
+//     printf("\n\n*** ERROR: fail closing current profile file...\n\n");
+//     return EXIT_FAILURE;
+// }  
+
+    return EXIT_SUCCESS;
 
 }

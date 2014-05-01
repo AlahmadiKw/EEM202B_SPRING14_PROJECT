@@ -229,7 +229,7 @@ int main (int argc, char* argv[]) {
             now = start;
             while (now < start + duration) {
                 Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\n\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
+                printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
                 if (Y > ALPHA) {
                     L = now;
                     break;
@@ -254,7 +254,7 @@ int main (int argc, char* argv[]) {
             now = entry->step->startTime;
             while (now < T) {
                 Y = computeSum1(BETA, NUM_TERMS, entry, now) + computeSum2(BETA, NUM_TERMS, head, entry->prev, now);
-                printf ("\n\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
+                printf ("\t--> Y = %5f, ALPHA = %f\n", Y, ALPHA);
                 if (Y > ALPHA) {
                     L = now;
                     break;

@@ -9,6 +9,7 @@ Contact: daler@ece.uvic.ca.
 
 */
 
+#define ARR_SIZE 512
 
 typedef struct {
   int stepIndex;		/* step index */
