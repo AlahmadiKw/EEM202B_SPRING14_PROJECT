@@ -148,9 +148,9 @@ double computeSum2Online(double BETA, int NUM_TERMS, Step *steps[], int last, do
     sum = 0;
     int i = 0;
     for (i=last; i>=0; i--){
-        current = step[i]->currentLoad;
-        duration = step[i]->loadDuration;
-        start = step[i]->startTime;
+        current = steps[i]->currentLoad;
+        duration = steps[i]->loadDuration;
+        start = steps[i]->startTime;
         x = 0;
         for (m = 1; m <= NUM_TERMS; m++) {
             x = x + (exp(-BETA*BETA*m*m*(now-start-duration)) - exp(-BETA*BETA*m*m*(now-start)))/(BETA*BETA*m*m);
@@ -158,6 +158,65 @@ double computeSum2Online(double BETA, int NUM_TERMS, Step *steps[], int last, do
         sum = sum + current*(duration + 2*x);
     }
     return sum;
+}
+
+void computeChargeOnline(Step *step)
+{
+    double L = -1;
+    double now;
+    static sum = 0; 
+    static double T = 0;
+    static Step * inputSteps[ARR_SIZE];
+    static int numLoads = 0; 
+    static double charge = 0;
+
+    inputSteps[numLoads++] = step;
+    if (numLoads>1) {
+        inputSteps[numLoads-2]->loadDuration = inputSteps[numLoads-1]->startTime - inputSteps[numLoads-2]->startTime;
+    }
+
+    double current = step->currentLoad;
+    double duration = step->loadDuration;
+    double start = step->startTime;
+
+    int i;
+    for (i=0; i<numLoads; i++){
+        printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", inputSteps[i]->stepIndex, 
+                                                    "currentLoad", inputSteps[i]->currentLoad,
+                                                    "startTime", inputSteps[i]->startTime,
+                                                    "loadDuration", inputSteps[i]->loadDuration);
+    }
+
+    // X = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], start+duration) + sum;
+    // now = start;
+    // while (now < start + duration){   /* search for root */
+    //     Y = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], now) + computeSum2Online(BETA, NUM_TERMS, steps, numLoads-2, now);
+    //     if (Y > ALPHA) {
+    //         L = now;
+    //         break;
+    //     }
+    //     now = now + DELTA;
+    // }
+    // if (L > 0) break;
+    // sum = computeSum2Online(BETA, NUM_TERMS, steps, numLoads-1, start+duration);
+    // charge = charge + current*duration;   
+    // printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);
+
+    // if (L == -1) {  /* the last load have not been checked yet */
+    //     stepN_2 = steps[numLoads-2];
+    //     T = (ALPHA - charge)/stepN_2->currentLoad; /* charge already computed */
+    //     if (T < stepN_2->loadDuration)
+    //         T = stepN_2->startTime + T;
+    //     else T = stepN_2->startTime + stepN_2->loadDuration;
+
+    //     X = computeSum1Online(BETA, NUM_TERMS, stepN_2, T) + sum; /* sum already computed */
+    //     if (X > ALPHA) {
+    //         now = stepN_2->startTime;
+    //         while (now < T){
+
+    //         }
+    //     }
+    // }
 }
 
 
@@ -180,7 +239,7 @@ int main (int argc, char* argv[]) {
     Step *step;
     Entry *head, *entry;
 
-    int load_nums = 0;
+    int numLoads = 0;
     Step *steps[ARR_SIZE];
 
 
@@ -242,24 +301,49 @@ int main (int argc, char* argv[]) {
 
 /*** Compute step durations ***/
 
-    head->prev->step->loadDuration = 0;	/* dummy last step (no load) */
-    for (entry = head->next; entry != head->prev; entry = entry->next) {
-        entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
-    }
+
     i = 0;
     for (entry = head->next; entry != head; entry = entry->next) {
         printf("%d\n",i );
         steps[i++] = entry->step; 
     }
-    load_nums = i;
+    numLoads = i;
 
-    for (i=0; i<load_nums; i++){
-        printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i]->stepIndex, 
-                                                "currentLoad", steps[i]->currentLoad,
-                                                "loadDuration", steps[i]->loadDuration,      
-                                                "startTime", steps[i]->startTime);
-    }
+    // head->prev->step->loadDuration = 0;  /* dummy last step (no load) */
+    // for (entry = head->next; entry != head->prev; entry = entry->next) {
+    //     entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
+    //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", entry->step->stepIndex, 
+    //                                             "currentLoad", entry->step->currentLoad,
+    //                                             "startTime", entry->step->startTime,
+    //                                             "loadDuration", entry->step->loadDuration);
+    // }
 
+    printf("---------------\n");
+    computeChargeOnline(steps[0]);
+    printf("---------------\n");
+    computeChargeOnline(steps[1]);
+    printf("---------------\n");
+    computeChargeOnline(steps[2]);
+    printf("---------------\n");
+    computeChargeOnline(steps[3]);
+    printf("---------------\n");
+    computeChargeOnline(steps[4]);
+    printf("---------------\n");
+    computeChargeOnline(steps[5]);
+    printf("---------------\n");
+    computeChargeOnline(steps[6]);
+    printf("---------------\n");
+    computeChargeOnline(steps[7]);
+    printf("---------------\n");
+    computeChargeOnline(steps[8]);
+    printf("---------------\n");
+    computeChargeOnline(steps[9]);
+    printf("---------------\n");
+    computeChargeOnline(steps[10]);
+
+
+
+/*** Compute life Online 
 
 // /*** Compute life ***/
 
