@@ -160,63 +160,83 @@ double computeSum2Online(double BETA, int NUM_TERMS, Step *steps[], int last, do
     return sum;
 }
 
-void computeChargeOnline(Step *step)
+void computeChargeOnline(Step *step, double BETA, double ALPHA)
 {
-    double L = -1;
+    static double L = -1;
     double now;
     static sum = 0; 
     static double T = 0;
     static Step * inputSteps[ARR_SIZE];
     static int numLoads = 0; 
     static double charge = 0;
+    double X;
+    double Y = 0;
+    int NUM_TERMS = 10;
+    double DELTA = 0.1;
+    Step * stepN_2;
+    static int flag = 0; 
 
     inputSteps[numLoads++] = step;
-    if (numLoads>1) {
-        inputSteps[numLoads-2]->loadDuration = inputSteps[numLoads-1]->startTime - inputSteps[numLoads-2]->startTime;
-    }
+    // if (numLoads>1) {  /* compute load durations */ 
+    //     inputSteps[numLoads-2]->loadDuration = inputSteps[numLoads-1]->startTime - inputSteps[numLoads-2]->startTime;
+    // }
 
-    double current = step->currentLoad;
-    double duration = step->loadDuration;
-    double start = step->startTime;
+    double current = inputSteps[numLoads-1]->currentLoad;
+    double duration = inputSteps[numLoads-1]->loadDuration;
+    double start = inputSteps[numLoads-1]->startTime;
 
     int i;
-    for (i=0; i<numLoads; i++){
-        printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", inputSteps[i]->stepIndex, 
-                                                    "currentLoad", inputSteps[i]->currentLoad,
-                                                    "startTime", inputSteps[i]->startTime,
-                                                    "loadDuration", inputSteps[i]->loadDuration);
-    }
-
-    // X = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], start+duration) + sum;
-    // now = start;
-    // while (now < start + duration){   /* search for root */
-    //     Y = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], now) + computeSum2Online(BETA, NUM_TERMS, steps, numLoads-2, now);
-    //     if (Y > ALPHA) {
-    //         L = now;
-    //         break;
-    //     }
-    //     now = now + DELTA;
+    // for (i=0; i<numLoads; i++){
+    //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", inputSteps[i]->stepIndex, 
+    //                                                 "currentLoad", inputSteps[i]->currentLoad,
+    //                                                 "startTime", inputSteps[i]->startTime,
+    //                                                 "loadDuration", inputSteps[i]->loadDuration);
     // }
-    // if (L > 0) break;
-    // sum = computeSum2Online(BETA, NUM_TERMS, steps, numLoads-1, start+duration);
-    // charge = charge + current*duration;   
-    // printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);
+    // printf("flag is %d\n", flag);
+    if (!flag){
+        X = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], start+duration) + sum;
+        now = start;
+        while (now < start + duration){   /* search for root */
+            Y = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], now) + computeSum2Online(BETA, NUM_TERMS, inputSteps, numLoads-2, now);
+            if (Y > ALPHA) {
+                L = now;
+                flag = 1; 
+                break;
+            }
+            now = now + DELTA;
+        }
+        sum = computeSum2Online(BETA, NUM_TERMS, inputSteps, numLoads-1, start+duration);
+        charge = charge + current*duration;   
+        
+        printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);
 
-    // if (L == -1) {  /* the last load have not been checked yet */
-    //     stepN_2 = steps[numLoads-2];
-    //     T = (ALPHA - charge)/stepN_2->currentLoad; /* charge already computed */
-    //     if (T < stepN_2->loadDuration)
-    //         T = stepN_2->startTime + T;
-    //     else T = stepN_2->startTime + stepN_2->loadDuration;
+        if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
+            stepN_2 = inputSteps[numLoads-2];
+            T = (ALPHA - charge)/stepN_2->currentLoad; /* charge already computed */
+            if (T < stepN_2->loadDuration)
+                T = stepN_2->startTime + T;
+            else T = stepN_2->startTime + stepN_2->loadDuration;
 
-    //     X = computeSum1Online(BETA, NUM_TERMS, stepN_2, T) + sum; /* sum already computed */
-    //     if (X > ALPHA) {
-    //         now = stepN_2->startTime;
-    //         while (now < T){
-
-    //         }
-    //     }
-    // }
+            X = computeSum1Online(BETA, NUM_TERMS, stepN_2, T) + sum; /* sum already computed */
+            if (X > ALPHA) {
+                now = stepN_2->startTime;
+                while (now < T){
+                    Y = computeSum1Online(BETA, NUM_TERMS, stepN_2, now) + computeSum2Online(BETA, NUM_TERMS, inputSteps, numLoads-3, now);
+                    if (Y > ALPHA) {
+                        L = now;
+                        flag = 1; 
+                        break;
+                    }
+                    now = now + DELTA;
+                }
+            }
+        }
+        // if (L > 0)
+            // printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);      
+    } 
+    // printf("after flag is %d\n", flag);
+    if (flag)
+        printf ("\n\nbattery exausted\nPredicted Life = %f\n\n", L);
 }
 
 
@@ -309,37 +329,37 @@ int main (int argc, char* argv[]) {
     }
     numLoads = i;
 
-    // head->prev->step->loadDuration = 0;  /* dummy last step (no load) */
-    // for (entry = head->next; entry != head->prev; entry = entry->next) {
-    //     entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
-    //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", entry->step->stepIndex, 
-    //                                             "currentLoad", entry->step->currentLoad,
-    //                                             "startTime", entry->step->startTime,
-    //                                             "loadDuration", entry->step->loadDuration);
-    // }
+    head->prev->step->loadDuration = 0;  /* dummy last step (no load) */
+    for (entry = head->next; entry != head->prev; entry = entry->next) {
+        entry->step->loadDuration = entry->next->step->startTime - entry->step->startTime;
+        // printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", entry->step->stepIndex, 
+        //                                         "currentLoad", entry->step->currentLoad,
+        //                                         "startTime", entry->step->startTime,
+        //                                         "loadDuration", entry->step->loadDuration);
+    }
 
     printf("---------------\n");
-    computeChargeOnline(steps[0]);
+    computeChargeOnline(steps[0], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[1]);
+    computeChargeOnline(steps[1], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[2]);
+    computeChargeOnline(steps[2], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[3]);
+    computeChargeOnline(steps[3], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[4]);
+    computeChargeOnline(steps[4], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[5]);
+    computeChargeOnline(steps[5], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[6]);
+    computeChargeOnline(steps[6], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[7]);
+    computeChargeOnline(steps[7], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[8]);
+    computeChargeOnline(steps[8], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[9]);
+    computeChargeOnline(steps[9], BETA, ALPHA);
     printf("---------------\n");
-    computeChargeOnline(steps[10]);
+    computeChargeOnline(steps[10], BETA, ALPHA);
 
 
 
@@ -408,15 +428,15 @@ int main (int argc, char* argv[]) {
 // }
 // free(head);
 
-// if (fclose(configData) == EOF) {
-//     printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
-//     return EXIT_FAILURE;
-// }  
+if (fclose(configData) == EOF) {
+    printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
+    return EXIT_FAILURE;
+}  
 
-// if (fclose(currentProfile) == EOF) {
-//     printf("\n\n*** ERROR: fail closing current profile file...\n\n");
-//     return EXIT_FAILURE;
-// }  
+if (fclose(currentProfile) == EOF) {
+    printf("\n\n*** ERROR: fail closing current profile file...\n\n");
+    return EXIT_FAILURE;
+}  
 
     return EXIT_SUCCESS;
 
