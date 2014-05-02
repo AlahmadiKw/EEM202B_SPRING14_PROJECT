@@ -162,24 +162,30 @@ double computeSum2Online(double BETA, int NUM_TERMS, Step *steps[], int last, do
 
 void computeChargeOnline(Step *step, double BETA, double ALPHA)
 {
+    /* user parameters */
+    int NUM_TERMS = 10;
+    double DELTA = 0.1;
+
     static double L = -1;
     double now;
     static sum = 0; 
-    static double T = 0;
+    double T = 0;
     static Step * inputSteps[ARR_SIZE];
     static int numLoads = 0; 
     static double charge = 0;
     double X;
     double Y = 0;
-    int NUM_TERMS = 10;
-    double DELTA = 0.1;
     Step * stepN_2;
     static int flag = 0; 
 
+    /* to calculate SOC% */ 
+    static int isFirstIter = 1;
+    static double divFactor = 0;  
+    static double lowerBound = 0;
+    double SOC; 
+
+
     inputSteps[numLoads++] = step;
-    // if (numLoads>1) {  /* compute load durations */ 
-    //     inputSteps[numLoads-2]->loadDuration = inputSteps[numLoads-1]->startTime - inputSteps[numLoads-2]->startTime;
-    // }
 
     double current = inputSteps[numLoads-1]->currentLoad;
     double duration = inputSteps[numLoads-1]->loadDuration;
@@ -192,7 +198,6 @@ void computeChargeOnline(Step *step, double BETA, double ALPHA)
     //                                                 "startTime", inputSteps[i]->startTime,
     //                                                 "loadDuration", inputSteps[i]->loadDuration);
     // }
-    // printf("flag is %d\n", flag);
     if (!flag){
         X = computeSum1Online(BETA, NUM_TERMS, inputSteps[numLoads-1], start+duration) + sum;
         now = start;
@@ -208,7 +213,13 @@ void computeChargeOnline(Step *step, double BETA, double ALPHA)
         sum = computeSum2Online(BETA, NUM_TERMS, inputSteps, numLoads-1, start+duration);
         charge = charge + current*duration;   
         
-        printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);
+        if (isFirstIter){
+            divFactor = ALPHA - Y; 
+            lowerBound = Y; 
+            isFirstIter = 0; 
+        }
+        SOC = (Y-lowerBound)/divFactor * 100; 
+        printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, ALPHA, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
             stepN_2 = inputSteps[numLoads-2];
@@ -231,10 +242,7 @@ void computeChargeOnline(Step *step, double BETA, double ALPHA)
                 }
             }
         }
-        // if (L > 0)
-            // printf ("\t--> Y = %-5f, ALPHA = %f\n", Y, ALPHA);      
     } 
-    // printf("after flag is %d\n", flag);
     if (flag)
         printf ("\n\nbattery exausted\nPredicted Life = %f\n\n", L);
 }
