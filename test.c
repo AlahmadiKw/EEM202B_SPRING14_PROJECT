@@ -42,7 +42,7 @@ int main (int argc, char* argv[]) {
 
     double results[4]; 
     for (i=0; i<numloads; i++){
-        computeChargeOnline(steps[i], results);
+        computeChargeOnline(steps[i]);
     }
 
 }

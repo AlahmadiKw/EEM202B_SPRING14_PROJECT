@@ -18,7 +18,7 @@ enum {
     ALPHA,
     BETA,
     NUM_TERMS,
-    DELTA
+    DELTA,
 };
 
 double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
@@ -30,10 +30,20 @@ int numLoads = 0;
 double charge = 0;
 int flag = 0; 
 double L = -1;
+int index = 0; 
 /* to calculate SOC% */ 
 int isFirstIter = 1;
 double divFactor = 0;  
 double lowerBound = 0;
+
+/* energy paramters VEMU RELATED */
+uint64_t prev_act_energy = 0;
+uint64_t prev_slp_energy = 0;
+/* freq = 8e9 */
+extern uint64_t vemu_frequency
+// #define period_ps(F)    1e12/F
+uint64_t start_time = 0;
+double temp_voltage = 3.75;
 
 
 void loadParam(double * parameters){
@@ -97,7 +107,7 @@ double computeSum2Online(struct Step steps[], int last, double now) {
     return sum;
 }
 
-void computeChargeOnline(struct Step step, double * results)
+double computeChargeOnline(struct Step step)
 {
     static int loadParamOnce = 1;
     double now;
@@ -120,17 +130,9 @@ void computeChargeOnline(struct Step step, double * results)
     double start = steps[numLoads-1].startTime;
 
     double alpha = parameters[ALPHA];
-    // double beta = parameters[BETA];
-    // int num_terms = (int) parameters[NUM_TERMS];
     double delta  = parameters [DELTA];
 
     int i;
-    // for (i=0; i<numLoads; i++){
-    //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", inputSteps[i]->stepIndex, 
-    //                                                 "currentLoad", inputSteps[i]->currentLoad,
-    //                                                 "startTime", inputSteps[i]->startTime,
-    //                                                 "loadDuration", inputSteps[i]->loadDuration);
-    // }
     if (!flag){
         X = computeSum1Online(steps[numLoads-1], start+duration) + sum;
         now = start;
@@ -179,9 +181,36 @@ void computeChargeOnline(struct Step step, double * results)
     } 
     if (flag)
         printf ("\n\nbattery exausted\nPredicted Life = %f\n", L);
-    for (i=0; i<4;i++){
-            results[i] = 0;
-    }
+
+    return SOC;
 
 }
+
+/*
+ *  get_current: VEMU related, gets energy based on certain frequency 
+ */
+struct Step get_current_step(){
+
+    uint64_t current_time = start_time;
+    uint64_t total_duration = vemu_get_act_time_all_classes() + vemu_get_slp_time();
+    double total_duration_seconds = (double) total_duration/ ((double) period_ps(1));
+
+    uint64_t act_energy = vemu_get_act_energy_all_classes();
+    uint64_t slp_energy = vemu_get_slp_energy();
+    uint64_t delta = (act_energy + slp_energy) - (prev_act_energy + prev_slp_energy);
+
+    double current_time_seconds = (double) current_time / ((double) period_ps(1));
+    double average_current_mA = (act_energy+slp_energy) / (current_time_seconds * temp_voltage) * 1e3;
+
+    struct Step step = createStep(index++, average_current_mA, total_duration_seconds/60.9, current_time_seconds/60.0); /*time in minutes! remember*/
+
+    prev_act_energy = act_energy;
+    prev_slp_energy = slp_energy;
+    start_time = current_time + total_duration; 
+}
+
+ double vemu_get_battery_SOC(void){
+    return computeChargeOnline(get_current_step());
+ }
+
 

@@ -28,7 +28,7 @@ struct Step {
   double startTime;     /* step start time */
 } ;
 
-void computeChargeOnline(struct Step step, double * results);
+double computeChargeOnline(struct Step step);
 
 
 #endif 
