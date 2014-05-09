@@ -14,14 +14,15 @@
 // #include "vemu-energy.h"
 // #include "qemu/timer.h"
 
-enum {
-    ALPHA,
-    BETA,
-    NUM_TERMS,
-    DELTA,
-};
+// enum {
+//     ALPHA,
+//     BETA,
+//     NUM_TERMS,
+//     DELTA,
+// };
 
-double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
+// double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
+struct Bat_param bat_param; 
 struct Step steps[MAX_HIST];
 
 /* battery initial conditions */
@@ -30,23 +31,23 @@ int numLoads = 0;
 double charge = 0;
 int flag = 0; 
 double L = -1;
-int index = 0; 
+// int index = 0; 
 /* to calculate SOC% */ 
 int isFirstIter = 1;
 double divFactor = 0;  
 double lowerBound = 0;
 
-/* energy paramters VEMU RELATED */
-uint64_t prev_act_energy = 0;
-uint64_t prev_slp_energy = 0;
-/* freq = 8e9 */
-extern uint64_t vemu_frequency
-// #define period_ps(F)    1e12/F
-uint64_t start_time = 0;
-double temp_voltage = 3.75;
+// /* energy paramters VEMU RELATED */
+// uint64_t prev_act_energy = 0;
+// uint64_t prev_slp_energy = 0;
+// /* freq = 8e9 */
+// extern uint64_t vemu_frequency
+// // #define period_ps(F)    1e12/F
+// uint64_t start_time = 0;
+// double temp_voltage = 3.75;
 
 
-void loadParam(double * parameters){
+void loadParam(struct Bat_param *params){
 
     FILE* configData;
 
@@ -55,10 +56,19 @@ void loadParam(double * parameters){
         perror ("ERROR");
     } 
 
-    fscanf(configData, "%lf\n", &parameters[ALPHA]);
-    fscanf(configData, "%lf\n", &parameters[BETA]);
-    fscanf(configData, "%lf\n", &parameters[NUM_TERMS]);
-    fscanf(configData, "%lf\n", &parameters[DELTA]);
+    double alpha, beta, delta, voltage; 
+    int num_terms; 
+    fscanf(configData, "%lf\n", &alpha);
+    fscanf(configData, "%lf\n", &beta);
+    fscanf(configData, "%d\n", &num_terms);
+    fscanf(configData, "%lf\n", &delta);
+    fscanf(configData, "%lf\n", &voltage);
+
+    params->alpha = alpha; 
+    params->beta = beta;
+    params->num_terms = num_terms; 
+    params->delta = delta; 
+    params-> voltage = voltage; 
 
     if (fclose(configData) == EOF) {
         printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
@@ -79,9 +89,9 @@ double computeSum1Online(struct Step step, double now) {
     double sum, x;
     int m;
     x = 0;
-    int num_terms = (int) parameters[NUM_TERMS];
+    int num_terms = bat_param.num_terms;
     for (m = 1; m <= num_terms; m++) {
-        x = x + (1 - exp(-parameters[BETA]*parameters[BETA]*m*m*(now-step.startTime)))/(parameters[BETA]*parameters[BETA]*m*m);
+        x = x + (1 - exp(-bat_param.beta*bat_param.beta*m*m*(now-step.startTime)))/(bat_param.beta*bat_param.beta*m*m);
     }
     sum = step.currentLoad*(now - step.startTime + 2*x);
     return sum;
@@ -92,7 +102,7 @@ double computeSum2Online(struct Step steps[], int last, double now) {
     double current, duration, start;
     int m;
     sum = 0;
-    int num_terms = (int) parameters[NUM_TERMS];
+    int num_terms = bat_param.num_terms;
     int i = 0;
     for (i=last; i>=0; i--){
         current = steps[i].currentLoad;
@@ -100,7 +110,7 @@ double computeSum2Online(struct Step steps[], int last, double now) {
         start = steps[i].startTime;
         x = 0;
         for (m = 1; m <= num_terms; m++) {
-            x = x + (exp(-parameters[BETA]* parameters[BETA]*m*m*(now-start-duration)) - exp(-parameters[BETA]*parameters[BETA]*m*m*(now-start)))/(parameters[BETA]*parameters[BETA]*m*m);
+            x = x + (exp(-bat_param.beta* bat_param.beta*m*m*(now-start-duration)) - exp(-bat_param.beta*bat_param.beta*m*m*(now-start)))/(bat_param.beta*bat_param.beta*m*m);
         }
         sum = sum + current*(duration + 2*x);
     }
@@ -119,7 +129,7 @@ double computeChargeOnline(struct Step step)
     double SOC; 
 
     if (loadParamOnce){
-        loadParam(parameters);
+        loadParam(&bat_param);
         loadParamOnce = 0;
     }
 
@@ -129,8 +139,8 @@ double computeChargeOnline(struct Step step)
     double duration = steps[numLoads-1].loadDuration;
     double start = steps[numLoads-1].startTime;
 
-    double alpha = parameters[ALPHA];
-    double delta  = parameters [DELTA];
+    double alpha = bat_param.alpha;
+    double delta  = bat_param.delta;
 
     int i;
     if (!flag){
@@ -173,44 +183,45 @@ double computeChargeOnline(struct Step step)
                         flag = 1; 
                         break;
                     }
-                    now = now + DELTA;
+                    now = now + delta;
                 }
             }
         }
-
+        return SOC;
     } 
-    if (flag)
+    if (flag){
         printf ("\n\nbattery exausted\nPredicted Life = %f\n", L);
+        return -1;
+    }
 
-    return SOC;
-
+    return -1;
 }
 
 /*
  *  get_current: VEMU related, gets energy based on certain frequency 
  */
-struct Step get_current_step(){
+// struct Step get_current_step(){
 
-    uint64_t current_time = start_time;
-    uint64_t total_duration = vemu_get_act_time_all_classes() + vemu_get_slp_time();
-    double total_duration_seconds = (double) total_duration/ ((double) period_ps(1));
+//     uint64_t current_time = start_time;
+//     uint64_t total_duration = vemu_get_act_time_all_classes() + vemu_get_slp_time();
+//     double total_duration_seconds = (double) total_duration/ ((double) period_ps(1));
 
-    uint64_t act_energy = vemu_get_act_energy_all_classes();
-    uint64_t slp_energy = vemu_get_slp_energy();
-    uint64_t delta = (act_energy + slp_energy) - (prev_act_energy + prev_slp_energy);
+//     uint64_t act_energy = vemu_get_act_energy_all_classes();
+//     uint64_t slp_energy = vemu_get_slp_energy();
+//     uint64_t delta = (act_energy + slp_energy) - (prev_act_energy + prev_slp_energy);
 
-    double current_time_seconds = (double) current_time / ((double) period_ps(1));
-    double average_current_mA = (act_energy+slp_energy) / (current_time_seconds * temp_voltage) * 1e3;
+//     double current_time_seconds = (double) current_time / ((double) period_ps(1));
+//     double average_current_mA = (act_energy+slp_energy) / (current_time_seconds * temp_voltage) * 1e3;
 
-    struct Step step = createStep(index++, average_current_mA, total_duration_seconds/60.9, current_time_seconds/60.0); /*time in minutes! remember*/
+//     struct Step step = createStep(index++, average_current_mA, total_duration_seconds/60.9, current_time_seconds/60.0); /*time in minutes! remember*/
 
-    prev_act_energy = act_energy;
-    prev_slp_energy = slp_energy;
-    start_time = current_time + total_duration; 
-}
+//     prev_act_energy = act_energy;
+//     prev_slp_energy = slp_energy;
+//     start_time = current_time + total_duration; 
+// }
 
- double vemu_get_battery_SOC(void){
-    return computeChargeOnline(get_current_step());
- }
+//  double vemu_get_battery_SOC(void){
+//     return computeChargeOnline(get_current_step());
+//  }
 
 

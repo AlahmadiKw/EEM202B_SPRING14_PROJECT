@@ -28,6 +28,14 @@ struct Step {
   double startTime;     /* step start time */
 } ;
 
+struct Bat_param {
+    double alpha;
+    double beta;
+    int num_terms;
+    double delta;
+    double voltage;
+};
+
 double computeChargeOnline(struct Step step);
 
 
