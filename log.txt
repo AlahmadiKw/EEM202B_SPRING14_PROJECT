@@ -1,14 +1,97 @@
-	--> Y = 1700.653550, ALPHA = 40376.000000
-	--> Y = 7290.931822, ALPHA = 40376.000000
-	--> Y = 11998.454692, ALPHA = 40376.000000
-	--> Y = 21606.540996, ALPHA = 40376.000000
-	--> Y = 28955.708362, ALPHA = 40376.000000
-	--> Y = 36680.552996, ALPHA = 40376.000000
-	--> Y = 22429.632259, ALPHA = 40376.000000
-	--> Y = 24369.549855, ALPHA = 40376.000000
-	--> Y = 39030.029636, ALPHA = 40376.000000
-	--> Y = 40386.551704, ALPHA = 40376.000000
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 1700.653550, ALPHA = 40376.000000, SOC = 0.00%
 
 
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 7290.931822, ALPHA = 40376.000000, SOC = 14.45%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 11998.454692, ALPHA = 40376.000000, SOC = 26.63%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 21606.540996, ALPHA = 40376.000000, SOC = 51.47%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 28955.708362, ALPHA = 40376.000000, SOC = 70.47%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 36680.552996, ALPHA = 40376.000000, SOC = 90.44%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 22429.632259, ALPHA = 40376.000000, SOC = 53.60%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 24369.549855, ALPHA = 40376.000000, SOC = 58.61%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 39030.029636, ALPHA = 40376.000000, SOC = 96.52%
+
+
+battery exausted
+Predicted Life = -1.000000
+
+---------------
+lowerBound = 1700.653550, divFactor = 38675.346450
+	--> Y = 40386.551704, ALPHA = 40376.000000, SOC = 100.03%
+
+
+battery exausted
+Predicted Life = 155.400000
+
+---------------
+
+
+battery exausted
 Predicted Life = 155.400000
 

@@ -147,11 +147,11 @@ void computeChargeOnline(struct Step step, double * results)
         charge = charge + current*duration;   
         
         if (isFirstIter){
-            divFactor = ALPHA - Y; 
+            divFactor = alpha - Y; 
             lowerBound = Y; 
             isFirstIter = 0; 
         }
-        SOC = (Y-lowerBound)/divFactor * 100.0; 
+        SOC = (Y-lowerBound)/divFactor * 100; 
         printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
@@ -166,7 +166,7 @@ void computeChargeOnline(struct Step step, double * results)
                 now = stepN_2.startTime;
                 while (now < T){
                     Y = computeSum1Online(stepN_2, now) + computeSum2Online(steps, numLoads-3, now);
-                    if (Y > ALPHA) {
+                    if (Y > alpha) {
                         L = now;
                         flag = 1; 
                         break;

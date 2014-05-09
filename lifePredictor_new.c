@@ -219,6 +219,7 @@ void computeChargeOnline(Step *step, double BETA, double ALPHA)
             isFirstIter = 0; 
         }
         SOC = (Y-lowerBound)/divFactor * 100; 
+        printf("lowerBound = %f, divFactor = %f\n",lowerBound, divFactor );
         printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, ALPHA, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
@@ -243,7 +244,7 @@ void computeChargeOnline(Step *step, double BETA, double ALPHA)
             }
         }
     } 
-    if (flag)
+    if (1)
         printf ("\n\nbattery exausted\nPredicted Life = %f\n\n", L);
 }
 
