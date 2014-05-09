@@ -69,7 +69,8 @@ double computeSum1Online(struct Step step, double now) {
     double sum, x;
     int m;
     x = 0;
-    for (m = 1; m <= (int)parameters[NUM_TERMS]; m++) {
+    int num_terms = (int) parameters[NUM_TERMS];
+    for (m = 1; m <= num_terms; m++) {
         x = x + (1 - exp(-parameters[BETA]*parameters[BETA]*m*m*(now-step.startTime)))/(parameters[BETA]*parameters[BETA]*m*m);
     }
     sum = step.currentLoad*(now - step.startTime + 2*x);
@@ -81,13 +82,14 @@ double computeSum2Online(struct Step steps[], int last, double now) {
     double current, duration, start;
     int m;
     sum = 0;
+    int num_terms = (int) parameters[NUM_TERMS];
     int i = 0;
     for (i=last; i>=0; i--){
         current = steps[i].currentLoad;
         duration = steps[i].loadDuration;
         start = steps[i].startTime;
         x = 0;
-        for (m = 1; m <= (int)parameters[NUM_TERMS]; m++) {
+        for (m = 1; m <= num_terms; m++) {
             x = x + (exp(-parameters[BETA]* parameters[BETA]*m*m*(now-start-duration)) - exp(-parameters[BETA]*parameters[BETA]*m*m*(now-start)))/(parameters[BETA]*parameters[BETA]*m*m);
         }
         sum = sum + current*(duration + 2*x);
@@ -145,12 +147,11 @@ void computeChargeOnline(struct Step step, double * results)
         charge = charge + current*duration;   
         
         if (isFirstIter){
-            printf("booooooooooo\n");
             divFactor = ALPHA - Y; 
             lowerBound = Y; 
             isFirstIter = 0; 
         }
-        SOC = (Y-lowerBound)/divFactor * 100; 
+        SOC = (Y-lowerBound)/divFactor * 100.0; 
         printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
@@ -177,7 +178,7 @@ void computeChargeOnline(struct Step step, double * results)
 
     } 
     if (flag)
-        printf ("\n\nbattery exausted\nPredicted Life = %f\n\n", L);
+        printf ("\n\nbattery exausted\nPredicted Life = %f\n", L);
     for (i=0; i<4;i++){
             results[i] = 0;
     }

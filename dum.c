@@ -8,6 +8,11 @@ struct Point {
    int y;
 };
 
+typedef struct entry {
+  Point *point;			/* entry=step*/
+  struct entry *next, *prev;	/* next and previous entry */
+} Entry;
+
 struct Point *foo(int x, int y);
 void foo2();
 
@@ -21,11 +26,11 @@ main()
     // 	points[i] = foo(i,i*i);
     // 	printf("point = (%d, %d)\n", points[i]->x, points[i]->y);
     // }
-    foo2(foo(2,4));
-    printf("\n");
-    foo2(foo(3,5));
-    printf("\n");
-    foo2(foo(4,6));
+    // foo2(foo(2,4));
+    // printf("\n");
+    // foo2(foo(3,5));
+    // printf("\n");
+    // foo2(foo(4,6));
 
     // printf("point = (%d, %d)\n", point->x, point->y);
 }

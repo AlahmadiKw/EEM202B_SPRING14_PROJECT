@@ -1,35 +1,14 @@
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-     index          0 currentLoad     300.00  startTime       0.00 loadDuration       0.50
-     index          1 currentLoad     113.90  startTime       0.50 loadDuration      25.00
-     index          2 currentLoad     137.90  startTime      25.50 loadDuration      25.00
-     index          3 currentLoad     234.10  startTime      50.50 loadDuration      25.00
-     index          4 currentLoad     252.30  startTime      75.50 loadDuration      25.00
-     index          5 currentLoad     494.70  startTime     100.50 loadDuration       5.00
-     index          6 currentLoad       0.00  startTime     105.50 loadDuration      25.00
-     index          7 currentLoad     300.00  startTime     130.50 loadDuration       0.50
-     index          8 currentLoad     628.00  startTime     131.00 loadDuration       5.00
-     index          9 currentLoad     265.60  startTime     136.00 loadDuration   43064.00
----------------
-     index          0 currentLoad     300.00  startTime       0.00 loadDuration       0.50
----------------
-     index          0 currentLoad     300.00  startTime       0.00 loadDuration       0.50
-     index          1 currentLoad     113.90  startTime       0.50 loadDuration      25.00
----------------
-     index          0 currentLoad     300.00  startTime       0.00 loadDuration       0.50
-     index          1 currentLoad     113.90  startTime       0.50 loadDuration      25.00
-     index          2 currentLoad     137.90  startTime      25.50 loadDuration      25.00
----------------
-     index          0 currentLoad     300.00  startTime       0.00 loadDuration       0.50
-     index          1 currentLoad     113.90  startTime       0.50 loadDuration      25.00
-     index          2 currentLoad     137.90  startTime      25.50 loadDuration      25.00
-     index          3 currentLoad     234.10  startTime      50.50 loadDuration      25.00
+	--> Y = 1700.653550, ALPHA = 40376.000000
+	--> Y = 7290.931822, ALPHA = 40376.000000
+	--> Y = 11998.454692, ALPHA = 40376.000000
+	--> Y = 21606.540996, ALPHA = 40376.000000
+	--> Y = 28955.708362, ALPHA = 40376.000000
+	--> Y = 36680.552996, ALPHA = 40376.000000
+	--> Y = 22429.632259, ALPHA = 40376.000000
+	--> Y = 24369.549855, ALPHA = 40376.000000
+	--> Y = 39030.029636, ALPHA = 40376.000000
+	--> Y = 40386.551704, ALPHA = 40376.000000
+
+
+Predicted Life = 155.400000
+
