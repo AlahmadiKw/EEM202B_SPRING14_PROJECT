@@ -24,7 +24,7 @@
 // double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
 struct Bat_param bat_param; 
 const uint64_t max_hist = 32768;
-struct Step steps[max_hist] = {};
+Array steps;
 
 /* battery initial conditions */
 int sum = 0; 
@@ -46,6 +46,24 @@ double lowerBound = 0;
 // // #define period_ps(F)    1e12/F
 // uint64_t start_time = 0;
 // double temp_voltage = 3.75;
+
+void initArray(Array *a, uint64_t initialSize) {
+    a->array = (struct Step *)malloc(initialSize * sizeof(struct Step));
+    a->used = 0;
+    a->size = initialSize;
+}
+void insertArray(Array *a, struct Step element) {
+    if (a->used == a->size) {
+        a->size *= 2;
+        a->array = (struct Step *)realloc(a->array, a->size * sizeof(struct Step));
+    }
+    a->array[a->used++] = element;
+}
+void freeArray(Array *a) {
+    free(a->array);
+    a->array = NULL;
+    a->used = a->size = 0;
+}
 
 
 void loadParam(struct Bat_param *params){
@@ -98,7 +116,7 @@ double computeSum1Online(struct Step step, double now) {
     return sum;
 }
 
-double computeSum2Online(struct Step steps[], int last, double now) {
+double computeSum2Online(Array steps, int last, double now) {
     double sum, x;
     double current, duration, start;
     int m;
@@ -106,9 +124,9 @@ double computeSum2Online(struct Step steps[], int last, double now) {
     int num_terms = bat_param.num_terms;
     int i = 0;
     for (i=last; i>=0; i--){
-        current = steps[i].currentLoad;
-        duration = steps[i].loadDuration;
-        start = steps[i].startTime;
+        current = steps.array[i].currentLoad;
+        duration = steps.array[i].loadDuration;
+        start = steps.array[i].startTime;
         x = 0;
         for (m = 1; m <= num_terms; m++) {
             x = x + (exp(-bat_param.beta* bat_param.beta*m*m*(now-start-duration)) - exp(-bat_param.beta*bat_param.beta*m*m*(now-start)))/(bat_param.beta*bat_param.beta*m*m);
@@ -120,7 +138,7 @@ double computeSum2Online(struct Step steps[], int last, double now) {
 
 struct Bat_data computeChargeOnline(struct Step step)
 {
-    static int loadParamOnce = 1;
+    static int init_bat = 1;
     struct Bat_data bat_data; 
     double now;
     double T = 0;
@@ -130,27 +148,29 @@ struct Bat_data computeChargeOnline(struct Step step)
 
     double SOC; 
 
-    if (loadParamOnce){
+    if (init_bat){
+        initArray(&steps,MAX_HIST);
         loadParam(&bat_param);
-        loadParamOnce = 0;
+        init_bat = 0;
         bat_data.bat_param = bat_param; 
     }
 
-    steps[numLoads++] = step;
+    // steps[numLoads++] = step;
+    insertArray(&steps,step);
+    numLoads++;
 
-    double current = steps[numLoads-1].currentLoad;
-    double duration = steps[numLoads-1].loadDuration;
-    double start = steps[numLoads-1].startTime;
+    double current = steps.array[numLoads-1].currentLoad;
+    double duration = steps.array[numLoads-1].loadDuration;
+    double start = steps.array[numLoads-1].startTime;
 
     double alpha = bat_param.alpha;
     double delta  = bat_param.delta;
 
-    int i;
     if (!flag){
-        X = computeSum1Online(steps[numLoads-1], start+duration) + sum;
+        X = computeSum1Online(steps.array[numLoads-1], start+duration) + sum;
         now = start;
         while (now < start + duration){   /* search for root */
-            Y = computeSum1Online(steps[numLoads-1], now) + computeSum2Online(steps, numLoads-2, now);
+            Y = computeSum1Online(steps.array[numLoads-1], now) + computeSum2Online(steps, numLoads-2, now);
             if (Y > alpha) {
                 L = now;
                 flag = 1; 
@@ -172,7 +192,7 @@ struct Bat_data computeChargeOnline(struct Step step)
         // printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
-            stepN_2 = steps[numLoads-2];
+            stepN_2 = steps.array[numLoads-2];
             T = (alpha - charge)/stepN_2.currentLoad; /* charge already computed */
             if (T < stepN_2.loadDuration)
                 T = stepN_2.startTime + T;
@@ -196,6 +216,7 @@ struct Bat_data computeChargeOnline(struct Step step)
     } 
     if (flag){
         printf ("\nbattery exausted\nPredicted Life = %f\n", L);
+        freeArray(&steps);
         return bat_data;
     }
 

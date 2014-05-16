@@ -17,7 +17,7 @@ Contact: daler@ece.uvic.ca.
 
 
 
-#define MAX_HIST 512		/* maximum size of current profile history (in steps) */
+#define MAX_HIST 4		/* maximum size of current profile history (in steps) */
 
 struct  Results{
 	double soc;
@@ -45,6 +45,13 @@ struct Bat_data{
 };
 
 struct Bat_data computeChargeOnline(struct Step step);
+
+typedef struct {
+    struct Step *array;
+    uint64_t used;
+    uint64_t size;
+} Array;
+
 
 
 #endif 

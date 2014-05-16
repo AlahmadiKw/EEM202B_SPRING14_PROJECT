@@ -16,21 +16,30 @@ void foo(int *x){
 
 int main (int argc, char* argv[]) {
 
+    // Array a;
+    // int i;
+
+    // initArray(&a, 5);  // initially 5 elements
+    // for (i = 0; i < 100; i++)
+    //   insertArray(&a, i);  // automatically resizes as necessary
+    // printf("%d\n", a.array[9]);  // print 10th element
+    // printf("%d\n", a.used);  // print number of elements
+    // freeArray(&a);
+
+
+
     int i;
     int numloads = 0;
     struct Step steps[100];
     struct Bat_data bat_data; 
 
     numloads = importCurrProfile(steps, argc, argv);
-
     for (i=0; i<numloads; i++){
         printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i].stepIndex, 
                                                                     "currentLoad", steps[i].currentLoad,
                                                                     "startTime", steps[i].startTime,
                                                                     "loadDuration", steps[i].loadDuration);
     }
-
-    double results[4]; 
     for (i=0; i<numloads; i++){
         bat_data = computeChargeOnline(steps[i]);
         printf("charge = %5.2f SOC = %5.2f\n", bat_data.results.charge, bat_data.results.soc);
