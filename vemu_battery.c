@@ -23,7 +23,8 @@
 
 // double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
 struct Bat_param bat_param; 
-struct Step steps[MAX_HIST];
+const uint64_t max_hist = 32768;
+struct Step steps[max_hist] = {};
 
 /* battery initial conditions */
 int sum = 0; 
@@ -117,9 +118,10 @@ double computeSum2Online(struct Step steps[], int last, double now) {
     return sum;
 }
 
-double computeChargeOnline(struct Step step)
+struct Bat_data computeChargeOnline(struct Step step)
 {
     static int loadParamOnce = 1;
+    struct Bat_data bat_data; 
     double now;
     double T = 0;
     double X;
@@ -131,6 +133,7 @@ double computeChargeOnline(struct Step step)
     if (loadParamOnce){
         loadParam(&bat_param);
         loadParamOnce = 0;
+        bat_data.bat_param = bat_param; 
     }
 
     steps[numLoads++] = step;
@@ -163,8 +166,10 @@ double computeChargeOnline(struct Step step)
             lowerBound = Y; 
             isFirstIter = 0; 
         }
-        SOC = (Y-lowerBound)/divFactor * 100; 
-        printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
+        SOC = (1-(Y-lowerBound)/divFactor) * 100; 
+        bat_data.results.soc = SOC;
+        bat_data.results.charge = Y;
+        // printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
 
         if ((L == -1) && (numLoads>=3)) {  /* the last load have not been checked yet */
             stepN_2 = steps[numLoads-2];
@@ -187,14 +192,14 @@ double computeChargeOnline(struct Step step)
                 }
             }
         }
-        return SOC;
+        return bat_data;
     } 
     if (flag){
-        printf ("\n\nbattery exausted\nPredicted Life = %f\n", L);
-        return -1;
+        printf ("\nbattery exausted\nPredicted Life = %f\n", L);
+        return bat_data;
     }
 
-    return -1;
+    return bat_data;
 }
 
 /*

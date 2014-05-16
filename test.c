@@ -16,22 +16,12 @@ void foo(int *x){
 
 int main (int argc, char* argv[]) {
 
-    int x[3] = {1,2,3};
     int i;
-    for (i=0; i<3; i++)
-        printf("x(%d) = %d\n", i, x[i]);
-    foo(x);
-    printf("\n");
-    for (i=0; i<3; i++)
-        printf("x(%d) = %d\n", i, x[i]);
-
-
-
     int numloads = 0;
     struct Step steps[100];
+    struct Bat_data bat_data; 
 
     numloads = importCurrProfile(steps, argc, argv);
-
 
     for (i=0; i<numloads; i++){
         printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i].stepIndex, 
@@ -42,8 +32,10 @@ int main (int argc, char* argv[]) {
 
     double results[4]; 
     for (i=0; i<numloads; i++){
-        computeChargeOnline(steps[i]);
+        bat_data = computeChargeOnline(steps[i]);
+        printf("charge = %5.2f SOC = %5.2f\n", bat_data.results.charge, bat_data.results.soc);
     }
+    computeChargeOnline(steps[3]);
 
 }
 
