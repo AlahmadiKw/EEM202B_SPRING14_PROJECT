@@ -12,12 +12,13 @@ Contact: daler@ece.uvic.ca.
 
 // #include "lifePredictor_new.h"
 
-#ifndef VEMU_BATTERY_H
-#define VEMU_BATTERY_H
+#ifndef _vemu_battery_h
+#define _vemu_battery_h
+#ifdef  VEMU
 
 
 
-#define MAX_HIST 4		/* maximum size of current profile history (in steps) */
+#define MAX_HIST 32768		/* maximum size of current profile history (in steps) */
 
 struct  Results{
 	double soc;
@@ -44,14 +45,20 @@ struct Bat_data{
 	struct Bat_param bat_param;
 };
 
-struct Bat_data computeChargeOnline(struct Step step);
-
 typedef struct {
     struct Step *array;
     uint64_t used;
     uint64_t size;
 } Array;
 
+struct Step createStep(int index, double current, double duration, double start);
+struct Bat_data computeChargeOnline(struct Step step);
+void initArray(Array *a, uint64_t initialSize);
+void insertArray(Array *a, struct Step element);
+void freeArray(Array *a);
+void loadParam(struct Bat_param *params);
 
 
-#endif 
+
+#endif // VEMU
+#endif // _vemu_cycles_h

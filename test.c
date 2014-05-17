@@ -7,11 +7,14 @@
 // #include "lifePredictor_new.h"
 #include "vemu_battery.h"
 
-int importCurrProfile(struct Step *steps, int argc, char* argv[]);
+int importCurrProfile(int argc, char* argv[]);
+int importCurrProfile2(int argc, char* argv[]);
 
 void foo(int *x){
     x[2] = 100;
 }
+
+Array insteps;
 
 
 int main (int argc, char* argv[]) {
@@ -26,25 +29,40 @@ int main (int argc, char* argv[]) {
     // printf("%d\n", a.used);  // print number of elements
     // freeArray(&a);
 
+    // FILE* configData;
+
+    // if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
+    //     printf("\n\n*** ERROR: fail opening configuration data file...\n\n");
+    //     perror ("ERROR");
+    // } 
+
+    // double alpha, beta, delta, voltage; 
+    // int num_terms; 
+    // fscanf(configData, "%lf\n", &alpha);
+    // fscanf(configData, "%lf\n", &beta);
+    // fscanf(configData, "%d\n", &num_terms);
+    // fscanf(configData, "%lf\n", &delta);
+
+    // printf("alpha = %lf\nbeta = %lf\nnum_terms = %d\ndelta = %lf\n", alpha,beta,num_terms,delta );
 
 
-    int i;
+    
+    uint64_t i;
     int numloads = 0;
-    struct Step steps[100];
     struct Bat_data bat_data; 
 
-    numloads = importCurrProfile(steps, argc, argv);
+    numloads = importCurrProfile(argc, argv);
+    // for (i=0; i<numloads; i++){
+    //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", insteps.array[i].stepIndex, 
+    //                                                                 "currentLoad", insteps.array[i].currentLoad,
+    //                                                                 "startTime", insteps.array[i].startTime,
+    //                                                                 "loadDuration", insteps.array[i].loadDuration);
+    // }
+
     for (i=0; i<numloads; i++){
-        printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", steps[i].stepIndex, 
-                                                                    "currentLoad", steps[i].currentLoad,
-                                                                    "startTime", steps[i].startTime,
-                                                                    "loadDuration", steps[i].loadDuration);
+        bat_data = computeChargeOnline(insteps.array[i]);
+        printf("charge = %5lf SOC = %5lf\n", bat_data.results.charge, bat_data.results.soc);
     }
-    for (i=0; i<numloads; i++){
-        bat_data = computeChargeOnline(steps[i]);
-        printf("charge = %5.2f SOC = %5.2f\n", bat_data.results.charge, bat_data.results.soc);
-    }
-    computeChargeOnline(steps[3]);
 
 }
 
@@ -111,7 +129,7 @@ void removeEntry(Entry *entry) {
     free (entry);
 }
 
-int importCurrProfile(struct Step *steps, int argc, char* argv[])
+int importCurrProfile(int argc, char* argv[])
 {
     FILE* currentProfile;
 
@@ -119,9 +137,9 @@ int importCurrProfile(struct Step *steps, int argc, char* argv[])
     Entry *head, *entry;
     double current, start;
 
-    int numLoads = 0;
+    uint64_t numLoads = 0;
 
-    int k,i;
+    uint64_t k,i;
 
     /*** Open files containing battery profile and current profile ***/
 
@@ -173,10 +191,13 @@ int importCurrProfile(struct Step *steps, int argc, char* argv[])
         //                                         "loadDuration", entry->step->loadDuration);
     }
 
+
+    initArray(&insteps, 80000);  // initially 5 elements
     i = 0;
     for (entry = head->next; entry != head; entry = entry->next) {
-        printf("%d\n",i );
-        steps[i++] = *(entry->step); 
+        // printf("%lld\n",i );
+        insertArray(&insteps, *(entry->step));  // automatically resizes as necessary
+        i++;
     }
     numLoads = i;
 
@@ -186,6 +207,43 @@ int importCurrProfile(struct Step *steps, int argc, char* argv[])
     }  
 
     return numLoads;
+}
+
+int importCurrProfile2(int argc, char* argv[]){
+
+    FILE* currentProfile;
+    uint64_t k;
+    struct Step step;
+
+    if (argc != 2) {
+        printf("\n\n*** ERROR: unexpected number of main() arguments...\n\n");
+        printf("Usage: lifePredictor configData.dat currentProfile.dat\n\n");
+        return EXIT_FAILURE;
+    }
+    if ((currentProfile = fopen (argv[1], "r")) == NULL) {
+        printf("\n\n*** ERROR: fail opening current profile file...\n\n");
+        return EXIT_FAILURE;
+    }    
+
+    double current, interval;
+    double  startTime = 0;
+
+    for (k = 0; ; k++) {
+        if (fscanf(currentProfile, "%lf %lf\n", &interval, &current) == EOF) break;
+
+
+        step =  createStep(k, current,  interval, startTime);
+        startTime += interval;
+        // printf("startTime = %f\n", startTime);
+        // step = createStepp(k, current, 0, start);
+
+        insertArray(&insteps, step);
+    }
+
+    // k++;
+
+    return k;
+
 }
 
 

@@ -8,11 +8,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include "vemu_battery.h"
-// #include "vemu.h"
-// #include "qemu-common.h"
-// #include "vemu-cycles.h"
-// #include "vemu-energy.h"
-// #include "qemu/timer.h"
+#include "vemu.h"
+#include "qemu-common.h"
+#include "qemu/timer.h"
 
 // enum {
 //     ALPHA,
@@ -23,7 +21,6 @@
 
 // double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
 struct Bat_param bat_param; 
-const uint64_t max_hist = 32768;
 Array steps;
 
 /* battery initial conditions */
@@ -70,6 +67,8 @@ void loadParam(struct Bat_param *params){
 
     FILE* configData;
 
+    // if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
+    // if ((configData = fopen ("configData_si.dat", "r")) == NULL) {
     if ((configData = fopen ("configData.dat", "r")) == NULL) {
         printf("\n\n*** ERROR: fail opening configuration data file...\n\n");
         perror ("ERROR");
@@ -215,7 +214,7 @@ struct Bat_data computeChargeOnline(struct Step step)
         return bat_data;
     } 
     if (flag){
-        printf ("\nbattery exausted\nPredicted Life = %f\n", L);
+        printf ("\nbattery exausted\nPredicted Life = %lf\n", L);
         freeArray(&steps);
         return bat_data;
     }
@@ -223,31 +222,6 @@ struct Bat_data computeChargeOnline(struct Step step)
     return bat_data;
 }
 
-/*
- *  get_current: VEMU related, gets energy based on certain frequency 
- */
-// struct Step get_current_step(){
 
-//     uint64_t current_time = start_time;
-//     uint64_t total_duration = vemu_get_act_time_all_classes() + vemu_get_slp_time();
-//     double total_duration_seconds = (double) total_duration/ ((double) period_ps(1));
-
-//     uint64_t act_energy = vemu_get_act_energy_all_classes();
-//     uint64_t slp_energy = vemu_get_slp_energy();
-//     uint64_t delta = (act_energy + slp_energy) - (prev_act_energy + prev_slp_energy);
-
-//     double current_time_seconds = (double) current_time / ((double) period_ps(1));
-//     double average_current_mA = (act_energy+slp_energy) / (current_time_seconds * temp_voltage) * 1e3;
-
-//     struct Step step = createStep(index++, average_current_mA, total_duration_seconds/60.9, current_time_seconds/60.0); /*time in minutes! remember*/
-
-//     prev_act_energy = act_energy;
-//     prev_slp_energy = slp_energy;
-//     start_time = current_time + total_duration; 
-// }
-
-//  double vemu_get_battery_SOC(void){
-//     return computeChargeOnline(get_current_step());
-//  }
 
 
