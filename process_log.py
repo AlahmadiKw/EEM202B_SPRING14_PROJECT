@@ -14,17 +14,59 @@ from math import pow
 if __name__ == '__main__':
 	# print len(sys.argv)
 	in_file = sys.argv[1]
-	out_file = 'out_file.txt'
+	out_file = sys.argv[2]
 
 	line_out = []
 	with open(in_file) as in_f:
 		with open(out_file, 'w') as out_f:
 			for line in in_f:
 				temp = line.split()
-				line_out.extend([str(float(temp[0])*1e6),str(float(temp[1])*1e6),'\n'])
+				line_out.extend([str(float(temp[0])*1e-6/60),str(float(temp[1])*1e-3),'\n'])
 				line_out = ' '.join(line_out)
 				out_f.write(line_out)
 				line_out = []
+
+
+	# line_out = []
+	# out_file = 'new_log.txt'
+	# with open(in_file) as in_f:
+	# 	with open(out_file, 'w') as out_f:
+	# 		for line in in_f:
+	# 			temp = line.split()
+	# 			newstr = temp[3].replace(",", "")
+	# 			line_out.extend([str(float(temp[1])),str(float(newstr)),'\n'])
+	# 			line_out = ' '.join(line_out)
+	# 			out_f.write(line_out)
+	# 			line_out = []
+
+
+
+	# act_time = 0
+	# act_n = 0
+	# slp_time = 0
+	# slp_n = 0
+	# with open(in_file) as in_f:
+	# 	for line in in_f:
+	# 		temp = line.split()
+	# 		if float(temp[1]) > 70000:
+	# 			continue
+	# 		if temp[0] == "ACT_Int":
+	# 			act_time = act_time + float(temp[1])
+	# 			act_n = act_n + 1
+	# 		elif temp[0] == "SLP_Int":
+	# 			slp_time = slp_time + float(temp[1])
+	# 			slp_n = slp_n + 1			
+
+	# act_mean = act_time / act_n
+	# slp_mean = slp_time / slp_n
+
+
+
+
+	# act_mean = act_time / act_n
+	# slp_mean = slp_time / slp_n
+
+	# print 'ave act step = ', act_mean, '\nave slp step = ', slp_mean
 
 	# line_out = []
 	# with open(in_file) as in_f:
@@ -46,3 +88,18 @@ if __name__ == '__main__':
 	# 		delta = float(in_f.readline())
 	# 		out_f.write(str(1)+'\n')
 	# 		print 'delta = ', delta, ' delta_s = 1'
+
+	# time = 0
+	# with open(in_file) as in_f:	
+	# 	for line in in_f:
+	# 		temp = line.split()
+	# 		time = time + float(temp[0])
+
+
+	# print 'total time = ', time/1e6, ' s\n'
+
+
+
+
+
+

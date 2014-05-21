@@ -8,18 +8,18 @@
 #include <stdlib.h>
 #include <math.h>
 #include "vemu_battery.h"
-#include "vemu.h"
-#include "qemu-common.h"
-#include "qemu/timer.h"
+// #include "vemu.h"
+// #include "qemu-common.h"
+// #include "qemu/timer.h"
 
-// enum {
-//     ALPHA,
-//     BETA,
-//     NUM_TERMS,
-//     DELTA,
-// };
+ // #ifdef     VEMU
 
-// double parameters[4];        /*battery parameters: ALPHA, BETA, NUM_TERMS, DELTA*/
+
+/* global variables */ 
+double glob_soc = 100; // initialize
+double glob_charge = 0;
+double glob_voltage = 3.75; 
+
 struct Bat_param bat_param; 
 Array steps;
 
@@ -29,20 +29,12 @@ int numLoads = 0;
 double charge = 0;
 int flag = 0; 
 double L = -1;
-// int index = 0; 
+double start_huer = 0; 
 /* to calculate SOC% */ 
 int isFirstIter = 1;
 double divFactor = 0;  
 double lowerBound = 0;
 
-// /* energy paramters VEMU RELATED */
-// uint64_t prev_act_energy = 0;
-// uint64_t prev_slp_energy = 0;
-// /* freq = 8e9 */
-// extern uint64_t vemu_frequency
-// // #define period_ps(F)    1e12/F
-// uint64_t start_time = 0;
-// double temp_voltage = 3.75;
 
 void initArray(Array *a, uint64_t initialSize) {
     a->array = (struct Step *)malloc(initialSize * sizeof(struct Step));
@@ -67,9 +59,9 @@ void loadParam(struct Bat_param *params){
 
     FILE* configData;
 
-    // if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
+    if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
     // if ((configData = fopen ("configData_si.dat", "r")) == NULL) {
-    if ((configData = fopen ("configData.dat", "r")) == NULL) {
+    // if ((configData = fopen ("configData.dat", "r")) == NULL) {
         printf("\n\n*** ERROR: fail opening configuration data file...\n\n");
         perror ("ERROR");
     } 
@@ -88,13 +80,15 @@ void loadParam(struct Bat_param *params){
     params->delta = delta; 
     params-> voltage = voltage; 
 
+    glob_voltage = voltage; 
+
     if (fclose(configData) == EOF) {
         printf("\n\n*** ERROR: fail closing configuration data file...\n\n");
         perror ("ERROR");
     }  
 }
 
-struct Step createStep(int index, double current, double duration, double start) {
+struct Step createStep(uint64_t index, double current, double duration, double start) {
     struct Step step; 
     step.stepIndex = index;
     step.currentLoad = current;
@@ -132,6 +126,8 @@ double computeSum2Online(Array steps, int last, double now) {
         }
         sum = sum + current*(duration + 2*x);
     }
+    
+
     return sum;
 }
 
@@ -185,7 +181,7 @@ struct Bat_data computeChargeOnline(struct Step step)
             lowerBound = Y; 
             isFirstIter = 0; 
         }
-        SOC = (1-(Y-lowerBound)/divFactor) * 100; 
+        SOC = (1-Y/alpha) * 100; 
         bat_data.results.soc = SOC;
         bat_data.results.charge = Y;
         // printf ("\t--> Y = %-5f, ALPHA = %f, SOC = %.2f%%\n", Y, alpha, SOC);
@@ -224,4 +220,101 @@ struct Bat_data computeChargeOnline(struct Step step)
 
 
 
+
+
+double A_func(double ln, double tk_d, double tk){
+
+    int m; 
+    double x = 0;
+    double num_terms  = bat_param.num_terms;
+    for (m = 1; m <= num_terms; m++) {
+        x = x + (exp(-bat_param.beta* bat_param.beta*m*m*(ln-tk_d)) - exp(-bat_param.beta*bat_param.beta*m*m*(ln-tk)))/(bat_param.beta*bat_param.beta*m*m);
+    }
+    return x;
+
+
+}
+
+double weird(double t, double ts){
+    double beta  = bat_param.beta;
+    double val;
+    if (t <= ts){
+        val = t*beta*beta/2 - beta*sqrt(M_PI*t) + M_PI*M_PI/6;
+        return val;
+    }else {
+        val = beta*beta*t - log(exp(beta*beta*t)-1); 
+        return val; 
+    }
+}
+
+
+/* alternative model */ 
+double total_charge = 0; 
+
+double lt = 0;
+double eplsilon = 0;
+double ch_old;
+double ch;
+
+
+struct Bat_data compute_new(struct Step step){
+    static int count = 0; 
+    struct Bat_data bat_data;
+    bat_data.bat_param = bat_param; 
+
+    int num_terms = bat_param.num_terms;
+    double alpha  = bat_param.alpha;
+    double beta  = bat_param.beta;
+
+    double landa;
+    double thrd_term;
+    double temp;
+    double temp2;
+
+    double current = step.currentLoad;
+    double duration = step.loadDuration;
+    double startTime = step.startTime;
+
+    if (!count){
+        ch_old = 0; 
+        lt = lt + current*duration; 
+        count++;
+
+        eplsilon = A_func(startTime+duration, startTime+duration, startTime)/A_func(startTime, startTime+duration,startTime);
+        landa = eplsilon; 
+        temp = A_func(startTime+duration, startTime+duration, startTime);
+        thrd_term = 2 * current * temp; 
+        temp2 = lt + current*duration; 
+        ch = temp2 + landa * (ch_old - lt) + thrd_term; 
+
+        bat_data.results.soc = (1-ch/alpha) * 100; 
+        bat_data.results.charge = ch;
+        return bat_data;
+    } else {
+
+        eplsilon = A_func(startTime+duration, startTime+duration, startTime)/A_func(startTime, startTime+duration,startTime);
+        landa = eplsilon; 
+
+        // temp = weird(.001, tss)/(beta*beta) - weird(duration,tss);
+        temp = A_func(startTime+duration, startTime+duration, startTime);
+        // printf("%lf\n", temp);
+        thrd_term = 2 * current * temp; 
+        temp2 = lt + current*duration; 
+        
+        ch = temp2 + landa * (ch_old - lt) + thrd_term; 
+        ch_old = ch;
+
+        lt = lt + current*duration; 
+
+        
+        if (ch > alpha) ch = alpha;
+        bat_data.results.soc = (1-ch/alpha) * 100; 
+        bat_data.results.charge = ch;
+
+        return bat_data;
+    }
+}
+
+
+// #endif
 

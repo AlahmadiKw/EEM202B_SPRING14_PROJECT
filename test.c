@@ -43,7 +43,7 @@ int main (int argc, char* argv[]) {
     // fscanf(configData, "%d\n", &num_terms);
     // fscanf(configData, "%lf\n", &delta);
 
-    // printf("alpha = %lf\nbeta = %lf\nnum_terms = %d\ndelta = %lf\n", alpha,beta,num_terms,delta );
+    // printf("alpha = %5lf\nbeta = %5lf\nnum_terms = %5d\ndelta = %5lf\n", alpha,beta,num_terms,delta );
 
 
     
@@ -51,7 +51,7 @@ int main (int argc, char* argv[]) {
     int numloads = 0;
     struct Bat_data bat_data; 
 
-    numloads = importCurrProfile(argc, argv);
+    numloads = importCurrProfile2(argc, argv);
     // for (i=0; i<numloads; i++){
     //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", insteps.array[i].stepIndex, 
     //                                                                 "currentLoad", insteps.array[i].currentLoad,
@@ -61,7 +61,10 @@ int main (int argc, char* argv[]) {
 
     for (i=0; i<numloads; i++){
         bat_data = computeChargeOnline(insteps.array[i]);
-        printf("charge = %5lf SOC = %5lf\n", bat_data.results.charge, bat_data.results.soc);
+        printf("%-10llu %-10lf", (uint64_t)bat_data.results.charge, bat_data.results.soc);
+
+        bat_data = compute_new(insteps.array[i]);
+        printf("  new %-10llu %-10lf\n", (uint64_t)bat_data.results.charge, bat_data.results.soc);
     }
 
 }
@@ -189,6 +192,7 @@ int importCurrProfile(int argc, char* argv[])
         //                                         "currentLoad", entry->step->currentLoad,
         //                                         "startTime", entry->step->startTime,
         //                                         "loadDuration", entry->step->loadDuration);
+        // printf("dur = %f\n",entry->step->loadDuration );
     }
 
 
@@ -214,6 +218,7 @@ int importCurrProfile2(int argc, char* argv[]){
     FILE* currentProfile;
     uint64_t k;
     struct Step step;
+    initArray(&insteps, MAX_HIST);  // initially 5 elements
 
     if (argc != 2) {
         printf("\n\n*** ERROR: unexpected number of main() arguments...\n\n");

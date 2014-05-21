@@ -14,11 +14,15 @@ Contact: daler@ece.uvic.ca.
 
 #ifndef _vemu_battery_h
 #define _vemu_battery_h
-#ifdef  VEMU
+// #ifdef  VEMU
+
+#define MAX_HIST 1000000		/* maximum size of current profile history (in steps) */
 
 
 
-#define MAX_HIST 32768		/* maximum size of current profile history (in steps) */
+extern double glob_soc;
+extern double glob_charge;
+extern double glob_voltage; 
 
 struct  Results{
 	double soc;
@@ -51,14 +55,16 @@ typedef struct {
     uint64_t size;
 } Array;
 
-struct Step createStep(int index, double current, double duration, double start);
+struct Step createStep(uint64_t index, double current, double duration, double start);
 struct Bat_data computeChargeOnline(struct Step step);
 void initArray(Array *a, uint64_t initialSize);
 void insertArray(Array *a, struct Step element);
 void freeArray(Array *a);
 void loadParam(struct Bat_param *params);
 
+struct Bat_data compute_new(struct Step step);
 
 
-#endif // VEMU
+
+// #endif // VEMU
 #endif // _vemu_cycles_h
