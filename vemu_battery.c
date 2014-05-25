@@ -59,9 +59,9 @@ void loadParam(struct Bat_param *params){
 
     FILE* configData;
 
-    if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
+    // if ((configData = fopen ("vemu_config.txt", "r")) == NULL) {
     // if ((configData = fopen ("configData_si.dat", "r")) == NULL) {
-    // if ((configData = fopen ("configData.dat", "r")) == NULL) {
+    if ((configData = fopen ("configData.dat", "r")) == NULL) {
         printf("\n\n*** ERROR: fail opening configuration data file...\n\n");
         perror ("ERROR");
     } 
@@ -224,47 +224,32 @@ struct Bat_data computeChargeOnline(struct Step step)
 
 double A_func(double ln, double tk_d, double tk){
 
-    int m; 
+    int m;
     double x = 0;
     double num_terms  = bat_param.num_terms;
     for (m = 1; m <= num_terms; m++) {
         x = x + (exp(-bat_param.beta* bat_param.beta*m*m*(ln-tk_d)) - exp(-bat_param.beta*bat_param.beta*m*m*(ln-tk)))/(bat_param.beta*bat_param.beta*m*m);
     }
     return x;
-
-
 }
 
-double weird(double t, double ts){
-    double beta  = bat_param.beta;
-    double val;
-    if (t <= ts){
-        val = t*beta*beta/2 - beta*sqrt(M_PI*t) + M_PI*M_PI/6;
-        return val;
-    }else {
-        val = beta*beta*t - log(exp(beta*beta*t)-1); 
-        return val; 
-    }
-}
-
-
-/* alternative model */ 
-double total_charge = 0; 
+/* alternative model */
 
 double lt = 0;
 double eplsilon = 0;
-double ch_old;
-double ch;
+double ch_old=0;
+double ch =0;
 
 
 struct Bat_data compute_new(struct Step step){
-    static int count = 0; 
+    static int count = 0;
     struct Bat_data bat_data;
-    bat_data.bat_param = bat_param; 
 
-    int num_terms = bat_param.num_terms;
+    loadParam(&bat_param);                                                                                                                              
+
+    bat_data.bat_param = bat_param;
+
     double alpha  = bat_param.alpha;
-    double beta  = bat_param.beta;
 
     double landa;
     double thrd_term;
@@ -275,44 +260,64 @@ struct Bat_data compute_new(struct Step step){
     double duration = step.loadDuration;
     double startTime = step.startTime;
 
-    if (!count){
-        ch_old = 0; 
-        lt = lt + current*duration; 
+
+    
+
+    if (count == 0){
+
+        ch_old = 0;
+        lt = lt + current*duration;
         count++;
 
         eplsilon = A_func(startTime+duration, startTime+duration, startTime)/A_func(startTime, startTime+duration,startTime);
-        landa = eplsilon; 
+        landa = eplsilon;                                                                                                                               
         temp = A_func(startTime+duration, startTime+duration, startTime);
-        thrd_term = 2 * current * temp; 
-        temp2 = lt + current*duration; 
-        ch = temp2 + landa * (ch_old - lt) + thrd_term; 
+        thrd_term = 2 * current * temp;
+        temp2 = lt + current*duration;
+        ch = temp2 + thrd_term;
 
-        bat_data.results.soc = (1-ch/alpha) * 100; 
+        bat_data.results.soc = (1-ch/alpha) * 100;
         bat_data.results.charge = ch;
         return bat_data;
-    } else {
+
+    } else if (count == 1) {
 
         eplsilon = A_func(startTime+duration, startTime+duration, startTime)/A_func(startTime, startTime+duration,startTime);
-        landa = eplsilon; 
+        landa = eplsilon;
+        // printf("%f\n", eplsilon);
 
-        // temp = weird(.001, tss)/(beta*beta) - weird(duration,tss);
         temp = A_func(startTime+duration, startTime+duration, startTime);
-        // printf("%lf\n", temp);
-        thrd_term = 2 * current * temp; 
-        temp2 = lt + current*duration; 
-        
-        ch = temp2 + landa * (ch_old - lt) + thrd_term; 
+
+        thrd_term = 2 * current * temp;
+        temp2 = lt + current*duration;
+
+        ch = temp2 + landa * (ch_old - lt) + thrd_term;
         ch_old = ch;
 
         lt = lt + current*duration; 
 
-        
-        if (ch > alpha) ch = alpha;
-        bat_data.results.soc = (1-ch/alpha) * 100; 
+
+
+        bat_data.results.soc = (1-ch/alpha) * 100;
         bat_data.results.charge = ch;
 
+        if (ch > alpha) {
+            ch = alpha;
+            bat_data.results.soc = (1-ch/alpha) * 100;
+            bat_data.results.charge = ch;
+            count++;
+
+        }
+
+        return bat_data;
+    } else if (count == 2){
+        printf("battery exhausted, available charge = 0\n");
+        ch = alpha;
+        bat_data.results.soc = (1-ch/alpha) * 100;
+        bat_data.results.charge = ch;
         return bat_data;
     }
+    return bat_data;  
 }
 
 

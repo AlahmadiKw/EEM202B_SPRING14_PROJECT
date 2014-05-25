@@ -27,6 +27,7 @@ if __name__ == '__main__':
 				line_out = []
 
 
+
 	# line_out = []
 	# out_file = 'new_log.txt'
 	# with open(in_file) as in_f:
