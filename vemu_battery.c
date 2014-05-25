@@ -239,6 +239,7 @@ double lt = 0;
 double eplsilon = 0;
 double ch_old=0;
 double ch =0;
+struct Step old_step;
 
 
 struct Bat_data compute_new(struct Step step){
@@ -278,13 +279,18 @@ struct Bat_data compute_new(struct Step step){
 
         bat_data.results.soc = (1-ch/alpha) * 100;
         bat_data.results.charge = ch;
+        old_step = step;
         return bat_data;
 
     } else if (count == 1) {
 
-        eplsilon = A_func(startTime+duration, startTime+duration, startTime)/A_func(startTime, startTime+duration,startTime);
+        double oldcurrent = old_step.currentLoad;
+        double oldduration = old_step.loadDuration;
+        double oldstartTime = old_step.startTime;
+
+        eplsilon = A_func(startTime+duration, oldstartTime+oldduration, oldstartTime)/A_func(startTime, oldstartTime+oldduration,oldstartTime);
         landa = eplsilon;
-        // printf("%f\n", eplsilon);
+        printf("%f\n", eplsilon);
 
         temp = A_func(startTime+duration, startTime+duration, startTime);
 
@@ -309,6 +315,7 @@ struct Bat_data compute_new(struct Step step){
 
         }
 
+        old_step = step;
         return bat_data;
     } else if (count == 2){
         printf("battery exhausted, available charge = 0\n");

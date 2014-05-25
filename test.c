@@ -52,7 +52,7 @@ int main (int argc, char* argv[]) {
     struct Bat_data bat_data; 
     struct Bat_data bat_data1; 
 
-    numloads = importCurrProfile(argc, argv);
+    numloads = importCurrProfile2(argc, argv);
     // for (i=0; i<numloads; i++){
     //     printf("%10s %10d %10s %10.2f %10s %10.2f %10s %10.2f\n", "index", insteps.array[i].stepIndex, 
     //                                                                 "currentLoad", insteps.array[i].currentLoad,
@@ -63,10 +63,10 @@ int main (int argc, char* argv[]) {
 
     for (i=0; i<numloads; i++){
         bat_data1 = computeChargeOnline(insteps.array[i]);
-        printf("%-10lld %-10lf", (uint64_t)bat_data1.results.charge, bat_data1.results.soc);
+        // printf("%-10lld %-10lf", (uint64_t)bat_data1.results.charge, bat_data1.results.soc);
 
         bat_data = compute_new(insteps.array[i]);
-        printf("   new %-10lld %-10lf\n", (uint64_t)bat_data.results.charge, bat_data.results.soc);
+        // printf("   new %-10lld %-10lf\n", (uint64_t)bat_data.results.charge, bat_data.results.soc);
     }
 
 }
