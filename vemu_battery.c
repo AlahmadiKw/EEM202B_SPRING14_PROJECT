@@ -150,9 +150,11 @@ struct Bat_data computeChargeOnline(struct Step step)
         bat_data.bat_param = bat_param; 
     }
 
+    if (!flag){
     // steps[numLoads++] = step;
-    insertArray(&steps,step);
-    numLoads++;
+        insertArray(&steps,step);
+        numLoads++;
+    }
 
     double current = steps.array[numLoads-1].currentLoad;
     double duration = steps.array[numLoads-1].loadDuration;
@@ -211,7 +213,7 @@ struct Bat_data computeChargeOnline(struct Step step)
     } 
     if (flag){
         printf ("\nbattery exausted\nPredicted Life = %lf\n", L);
-        freeArray(&steps);
+        // freeArray(&steps);
         return bat_data;
     }
 
@@ -290,7 +292,7 @@ struct Bat_data compute_new(struct Step step){
 
         eplsilon = A_func(startTime+duration, oldstartTime+oldduration, oldstartTime)/A_func(startTime, oldstartTime+oldduration,oldstartTime);
         landa = eplsilon;
-        printf("%f\n", eplsilon);
+        // printf("%f\n", eplsilon);
 
         temp = A_func(startTime+duration, startTime+duration, startTime);
 
