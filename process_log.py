@@ -16,16 +16,52 @@ if __name__ == '__main__':
 	in_file = sys.argv[1]
 	out_file = sys.argv[2]
 
+
+	# line_out = []
+	# inc = 5
+	# with open(in_file, 'w') as in_f:
+
+	# 	for i in range(200):
+	# 		line_out.extend([str(1), str(inc)])
+	# 		line_out = ' '.join(line_out)
+	# 		line_out += '\n'
+	# 		in_f.write(line_out)
+	# 		line_out = []
+	# 		inc += 5
+
+
+
 	line_out = []
 	with open(in_file) as in_f:
 		with open(out_file, 'w') as out_f:
 			for line in in_f:
 				temp = line.split()
-				line_out.extend([str(float(temp[0])*1e-6/60),str(float(temp[1])*1e-3),'\n'])
+				# line_out.extend([str(float(temp[1])*1e-6/60),str(float(temp[3])*1e-3*1e1),'\n'])
+				line_out.extend([str(float(temp[1])),str(float(temp[3])),'\n'])
 				line_out = ' '.join(line_out)
 				out_f.write(line_out)
 				line_out = []
 
+
+	# temp_inter = 0	
+	# cur = 0
+	# cur_prev = 0		
+	# line_out = []
+	# with open(in_file) as in_f:
+	# 	with open(out_file, 'w') as out_f:
+	# 		for line in in_f:
+	# 			temp = line.split()
+	# 			cur = float(temp[3])*1e-3
+	# 			inter = float(temp[1])*1e-6/60
+	# 			if abs(cur - cur_prev) >1:
+	# 				line_out.extend([str(temp_inter), str(cur_prev), '\n'])
+	# 				line_out = ' '.join(line_out)
+	# 				out_f.write(line_out)
+	# 				line_out = []
+	# 				temp_inter = inter; 
+	# 			else : 
+	# 				temp_inter += inter
+	# 			cur_prev = cur
 
 
 	# line_out = []

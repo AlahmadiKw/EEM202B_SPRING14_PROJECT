@@ -286,13 +286,11 @@ struct Bat_data compute_new(struct Step step){
 
     } else if (count == 1) {
 
-        double oldcurrent = old_step.currentLoad;
         double oldduration = old_step.loadDuration;
         double oldstartTime = old_step.startTime;
 
         eplsilon = A_func(startTime+duration, oldstartTime+oldduration, oldstartTime)/A_func(startTime, oldstartTime+oldduration,oldstartTime);
         landa = eplsilon;
-        // printf("%f\n", eplsilon);
 
         temp = A_func(startTime+duration, startTime+duration, startTime);
 
